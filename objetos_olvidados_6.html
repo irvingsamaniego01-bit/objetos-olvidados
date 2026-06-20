@@ -1,0 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
+<title>Objetos Olvidados — Hotel</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #F5F5F7; min-height: 100vh; }
+
+  .app-header {
+    background: #0033FF;
+    padding: 16px 20px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .app-header-title {
+    color: #fff;
+    font-size: 16px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .conn-badge {
+    font-size: 11px;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.2);
+    color: #fff;
+  }
+  .conn-badge.connected { background: #22c55e; color: #fff; }
+
+  .tab-bar {
+    display: flex;
+    background: #fff;
+    border-bottom: 1px solid #E5E5E5;
+    position: sticky;
+    top: 56px;
+    z-index: 99;
+  }
+  .tab {
+    flex: 1;
+    padding: 13px 0;
+    font-size: 13px;
+    font-weight: 500;
+    text-align: center;
+    cursor: pointer;
+    color: #888;
+    border-bottom: 2px solid transparent;
+  }
+  .tab.active { color: #0033FF; border-bottom-color: #0033FF; }
+
+  .view { display: none; padding: 16px; max-width: 600px; margin: 0 auto; }
+  .view.active { display: block; }
+
+  .card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+
+  .field-group { margin-bottom: 14px; }
+  .field-label {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 6px;
+  }
+  .req { color: #E24B4A; }
+
+  input[type="text"],
+  input[type="date"],
+  textarea {
+    width: 100%;
+    padding: 11px 14px;
+    border: 1px solid #E5E5E5;
+    border-radius: 10px;
+    font-size: 15px;
+    font-family: inherit;
+    color: #111;
+    background: #FAFAFA;
+    -webkit-appearance: none;
+  }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: #0033FF;
+    background: #fff;
+  }
+  textarea { resize: vertical; min-height: 80px; }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+
+  .photo-area {
+    border: 2px dashed #D0D0D0;
+    border-radius: 10px;
+    padding: 28px 16px;
+    text-align: center;
+    cursor: pointer;
+    background: #FAFAFA;
+    position: relative;
+  }
+  .photo-area input[type="file"] {
+    position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%;
+  }
+  .photo-icon { font-size: 36px; margin-bottom: 8px; }
+  .photo-label { font-size: 14px; color: #555; margin-bottom: 4px; }
+  .photo-sub { font-size: 12px; color: #999; }
+  #photo-preview {
+    width: 100%; max-height: 220px; object-fit: cover;
+    border-radius: 8px; display: none; margin-top: 8px;
+  }
+  .photo-change {
+    font-size: 12px; color: #0033FF; margin-top: 8px; cursor: pointer; display: none;
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 15px;
+    background: #0033FF;
+    color: #fff;
+    border: none;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+  .btn-primary:active { opacity: 0.85; transform: scale(0.99); }
+  .btn-primary:disabled { opacity: 0.5; }
+
+  .status-bar {
+    padding: 12px 16px;
+    border-radius: 10px;
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 14px;
+    display: none;
+    align-items: center;
+    gap: 8px;
+  }
+  .status-bar.success { background: #DCFCE7; color: #166534; display: flex; }
+  .status-bar.error { background: #FEE2E2; color: #991B1B; display: flex; }
+  .status-bar.loading { background: #DBEAFE; color: #1E40AF; display: flex; }
+
+  .search-wrap { position: relative; margin-bottom: 14px; }
+  .search-wrap input { padding-left: 38px; }
+  .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: #999; font-size: 18px; }
+
+  .record-item {
+    background: #fff;
+    border-radius: 12px;
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  }
+  .record-thumb {
+    width: 56px; height: 56px;
+    border-radius: 10px;
+    background: #F0F0F0;
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    overflow: hidden; font-size: 24px;
+  }
+  .record-thumb img { width: 100%; height: 100%; object-fit: cover; }
+  .record-desc { font-size: 14px; font-weight: 600; color: #111; margin-bottom: 5px; }
+  .record-meta { font-size: 12px; color: #666; display: flex; flex-wrap: wrap; gap: 8px; }
+  .meta-pill {
+    background: #F5F5F7;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+  }
+
+  .empty-state { text-align: center; padding: 50px 20px; color: #999; }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; }
+  .empty-text { font-size: 15px; }
+
+  .cfg-info {
+    background: #EFF6FF;
+    border-radius: 10px;
+    padding: 14px;
+    font-size: 13px;
+    color: #1E40AF;
+    margin-bottom: 14px;
+    line-height: 1.5;
+  }
+  .step-item {
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    padding: 12px 0;
+    border-bottom: 1px solid #F0F0F0;
+  }
+  .step-item:last-child { border-bottom: none; }
+  .step-n {
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: #0033FF;
+    color: #fff;
+    font-size: 13px; font-weight: 700;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; margin-top: 2px;
+  }
+  .step-title { font-size: 14px; font-weight: 600; color: #111; margin-bottom: 2px; }
+  .step-desc { font-size: 12px; color: #666; line-height: 1.4; }
+
+  .spinner {
+    width: 18px; height: 18px;
+    border: 2px solid rgba(255,255,255,0.35);
+    border-top-color: #fff;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+    display: inline-block;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  @media (max-width: 400px) {
+    .grid-2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app-header">
+  <div class="app-header-title">
+    📦 Objetos Olvidados
+  </div>
+  <span class="conn-badge" id="conn-badge">Sin configurar</span>
+</div>
+
+<div class="tab-bar">
+  <div class="tab active" onclick="switchTab('registro')" id="tab-registro">➕ Nuevo</div>
+  <div class="tab" onclick="switchTab('historial')" id="tab-historial">🔍 Historial</div>
+  <div class="tab" onclick="switchTab('config')" id="tab-config">⚙️ Configurar</div>
+</div>
+
+<!-- REGISTRO -->
+<div class="view active" id="view-registro">
+  <div class="status-bar" id="status-bar"></div>
+
+  <div class="card">
+    <div class="grid-2">
+      <div class="field-group">
+        <div class="field-label">Fecha <span class="req">*</span></div>
+        <input type="date" id="f-fecha" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">Habitación <span class="req">*</span></div>
+        <input type="text" id="f-hab" placeholder="Ej: 214" />
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Descripción del objeto <span class="req">*</span></div>
+      <textarea id="f-desc" placeholder="Ej: Cargador iPhone blanco, dejado en el buró"></textarea>
+    </div>
+
+    <div class="grid-2">
+      <div class="field-group">
+        <div class="field-label">Recibido por <span class="req">*</span></div>
+        <input type="text" id="f-quien" placeholder="Nombre del colaborador" />
+      </div>
+      <div class="field-group">
+        <div class="field-label">Lugar de resguardo</div>
+        <input type="text" id="f-lugar" placeholder="Ej: Cajón recepción" />
+      </div>
+    </div>
+
+    <div class="field-group">
+      <div class="field-label">Foto del objeto</div>
+      <div class="photo-area" id="photo-area">
+        <input type="file" id="f-foto" accept="image/*" capture="environment" onchange="handlePhoto(this)" />
+        <div id="photo-placeholder">
+          <div class="photo-icon">📷</div>
+          <div class="photo-label">Tomar foto o seleccionar imagen</div>
+          <div class="photo-sub">Abre la cámara directo en la tableta</div>
+        </div>
+        <img id="photo-preview" alt="Vista previa del objeto" />
+        <div class="photo-change" id="photo-change" onclick="document.getElementById('f-foto').click()">
+          Cambiar foto
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <button class="btn-primary" id="btn-enviar" onclick="enviarRegistro()">
+    ✉️ Guardar en Google Sheets
+  </button>
+</div>
+
+<!-- HISTORIAL -->
+<div class="view" id="view-historial">
+  <div class="search-wrap">
+    <span class="search-icon">🔍</span>
+    <input type="text" placeholder="Buscar habitación o descripción..." oninput="renderRecords(this.value)" />
+  </div>
+  <div id="records-container">
+    <div class="empty-state">
+      <div class="empty-icon">📭</div>
+      <div class="empty-text">Aún no hay registros guardados.</div>
+    </div>
+  </div>
+</div>
+
+<!-- CONFIG -->
+<div class="view" id="view-config">
+  <div class="cfg-info">
+    💡 Pega aquí la URL de tu Apps Script publicado. Cada registro se guardará directo en tu Google Sheets en tiempo real.
+  </div>
+
+  <div class="card">
+    <div class="field-group">
+      <div class="field-label">URL del Apps Script</div>
+      <input type="text" id="cfg-url"
+        placeholder="https://script.google.com/macros/s/..."
+        oninput="guardarConfig()"
+        style="font-size:12px;" />
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="field-label" style="margin-bottom:12px;">Pasos para configurar</div>
+    <div class="step-item">
+      <div class="step-n">1</div>
+      <div>
+        <div class="step-title">Crear el Google Sheets</div>
+        <div class="step-desc">sheets.google.com → Nuevo → nómbralo "Objetos Olvidados Hotel"</div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-n">2</div>
+      <div>
+        <div class="step-title">Abrir Apps Script</div>
+        <div class="step-desc">En el Sheets: Extensiones → Apps Script → borra el código existente</div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-n">3</div>
+      <div>
+        <div class="step-title">Pegar el código</div>
+        <div class="step-desc">Pega el código que Claude te dio → Ctrl+S para guardar</div>
+      </div>
+    </div>
+    <div class="step-item">
+      <div class="step-n">4</div>
+      <div>
+        <div class="step-title">Autorizar y publicar</div>
+        <div class="step-desc">Ejecutar ▶ primero para dar permisos → Implementar → Nueva implementación → App web → Acceso: Cualquiera → Copiar URL y pegarla aquí arriba</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const STORAGE_KEY = 'hotel_objetos_standalone';
+const CONFIG_KEY  = 'hotel_config_standalone';
+
+function getConfig()  { try { return JSON.parse(localStorage.getItem(CONFIG_KEY)  || '{}'); } catch { return {}; } }
+function getRecords() { try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { return []; } }
+function saveRecords(r) { localStorage.setItem(STORAGE_KEY, JSON.stringify(r)); }
+
+function switchTab(tab) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.getElementById('view-' + tab).classList.add('active');
+  document.getElementById('tab-' + tab).classList.add('active');
+  if (tab === 'historial') renderRecords();
+}
+
+function handlePhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 400;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      const compressed = canvas.toDataURL('image/jpeg', 0.4);
+      const preview = document.getElementById('photo-preview');
+      preview.src = compressed;
+      preview.style.display = 'block';
+      document.getElementById('photo-placeholder').style.display = 'none';
+      document.getElementById('photo-change').style.display = 'block';
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function showStatus(type, msg) {
+  const bar = document.getElementById('status-bar');
+  const icons = { success: '✅', error: '❌', loading: '⏳' };
+  bar.className = 'status-bar ' + type;
+  bar.innerHTML = icons[type] + ' ' + msg;
+  bar.style.display = 'flex';
+  if (type !== 'loading') setTimeout(() => { bar.style.display = 'none'; }, 5000);
+}
+
+async function enviarRegistro() {
+  const fecha = document.getElementById('f-fecha').value;
+  const hab   = document.getElementById('f-hab').value.trim();
+  const desc  = document.getElementById('f-desc').value.trim();
+  const quien = document.getElementById('f-quien').value.trim();
+  const lugar = document.getElementById('f-lugar').value.trim();
+  const cfg   = getConfig();
+
+  if (!fecha || !hab || !desc || !quien) {
+    showStatus('error', 'Completa los campos obligatorios (*)');
+    return;
+  }
+
+  const preview = document.getElementById('photo-preview');
+  const fotoB64 = (preview.src && preview.style.display !== 'none') ? preview.src : '';
+
+  const registro = {
+    id: Date.now(),
+    fecha, habitacion: hab, descripcion: desc,
+    recibidoPor: quien, lugar, foto: fotoB64,
+    timestamp: new Date().toISOString()
+  };
+
+  const records = getRecords();
+  records.unshift(registro);
+  saveRecords(records);
+
+  if (!cfg.scriptUrl) {
+    showStatus('success', 'Guardado localmente. Configura la URL del script para sincronizar con Sheets.');
+    resetForm();
+    return;
+  }
+
+  const btn = document.getElementById('btn-enviar');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="spinner"></span> Enviando...';
+  showStatus('loading', 'Enviando a Google Sheets...');
+
+  try {
+    // Todo en un solo GET — foto comprimida incluida
+    const params = new URLSearchParams({
+      id:           String(registro.id),
+      fecha:        registro.fecha,
+      habitacion:   registro.habitacion,
+      descripcion:  registro.descripcion,
+      recibidoPor:  registro.recibidoPor,
+      lugar:        registro.lugar || '',
+      timestamp:    registro.timestamp,
+      foto:         fotoB64 || ''
+    });
+
+    const fullUrl = cfg.scriptUrl + '?' + params.toString();
+    const response = await fetch(fullUrl);
+    const data = await response.json();
+
+    if (data.status === 'ok') {
+      showStatus('success', '¡Registro guardado en Google Sheets!');
+      resetForm();
+    } else {
+      showStatus('error', 'Error del script: ' + (data.msg || 'desconocido'));
+    }
+  } catch(err) {
+    showStatus('error', 'Error de red: ' + err.message);
+  } finally {
+    btn.disabled = false;
+    btn.innerHTML = '✉️ Guardar en Google Sheets';
+  }
+}
+
+function resetForm() {
+  ['f-hab','f-quien','f-lugar'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('f-desc').value = '';
+  document.getElementById('f-foto').value = '';
+  document.getElementById('photo-preview').style.display = 'none';
+  document.getElementById('photo-preview').src = '';
+  document.getElementById('photo-placeholder').style.display = 'block';
+  document.getElementById('photo-change').style.display = 'none';
+  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+}
+
+function renderRecords(query) {
+  const q = (query || '').toLowerCase();
+  let records = getRecords();
+  if (q) records = records.filter(r =>
+    r.habitacion.toLowerCase().includes(q) ||
+    r.descripcion.toLowerCase().includes(q) ||
+    (r.recibidoPor || '').toLowerCase().includes(q)
+  );
+  const container = document.getElementById('records-container');
+  if (!records.length) {
+    container.innerHTML = `<div class="empty-state"><div class="empty-icon">📭</div><div class="empty-text">${q ? 'Sin resultados para "'+query+'"' : 'Aún no hay registros.'}</div></div>`;
+    return;
+  }
+  container.innerHTML = records.map(r => `
+    <div class="record-item">
+      <div class="record-thumb">
+        ${r.foto ? `<img src="${r.foto}" alt="Foto" />` : '📦'}
+      </div>
+      <div style="flex:1;min-width:0;">
+        <div class="record-desc">${r.descripcion}</div>
+        <div class="record-meta">
+          <span class="meta-pill">🚪 Hab. ${r.habitacion}</span>
+          <span class="meta-pill">📅 ${r.fecha}</span>
+          <span class="meta-pill">👤 ${r.recibidoPor}</span>
+          ${r.lugar ? `<span class="meta-pill">📍 ${r.lugar}</span>` : ''}
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function guardarConfig() {
+  const url = document.getElementById('cfg-url').value.trim();
+  const cfg = getConfig();
+  cfg.scriptUrl = url;
+  localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
+  const badge = document.getElementById('conn-badge');
+  if (url.startsWith('https://script.google.com')) {
+    badge.textContent = '✓ Conectado';
+    badge.className = 'conn-badge connected';
+  } else {
+    badge.textContent = 'Sin configurar';
+    badge.className = 'conn-badge';
+  }
+}
+
+function init() {
+  document.getElementById('f-fecha').value = new Date().toISOString().split('T')[0];
+  const cfg = getConfig();
+  if (cfg.scriptUrl) {
+    document.getElementById('cfg-url').value = cfg.scriptUrl;
+    guardarConfig();
+  }
+}
+
+init();
+</script>
+</body>
+</html>
